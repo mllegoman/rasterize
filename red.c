@@ -105,8 +105,8 @@ i = 0;
 }
 
 // directly modifies points (do not use before dumpinfo):
-void rasterize (uint16_t height, 
-		uint16_t width, 
+void rasterize (uint16_t width, 
+		uint16_t height, 
 		uint8_t r, 
 		uint8_t g, 
 		uint8_t b, 
@@ -114,7 +114,7 @@ void rasterize (uint16_t height,
 		uint16_t *ctr, 
 		int16_t *glyfdata, 
 		FILE *OUT) {
-fprintf(OUT, "P3 %d %d 255\n", height, width);
+fprintf(OUT, "P3 %d %d 255\n", width, height);
 uint8_t *rmap, *gmap, *bmap;
 rmap = malloc(height*width);
 gmap = malloc(height*width);
@@ -134,21 +134,15 @@ i = 0;
 	j = 0;
 	k = 0;
 		while (j < ctr[i]) {
-		printf("%d\n", pts[2][i][j]);
+		pts[0][i][j] = (pts[0][i][j]-glyfdata[1])*width/glyfdata[3];  
+		pts[1][i][j] = (pts[1][i][j]-glyfdata[2])*height/glyfdata[4];
 			if (pts[2][i][j]&&k!=0) { // adjust pts by k + 1
 			l = 0;
-			x = &pts[0][i][j-k-(j!=k)];
-                        y = &pts[1][i][j-k-(j!=k)];
-				while (l < k) {
-				printf("%d %d\n", x[l], y[l]);
-				l++;
-				}
-			bezier(x, y, k + 1, 2, 1024, width, r, g, b, rmap, gmap, bmap);
+			x = &pts[0][i][j-k];
+                        y = &pts[1][i][j-k];
+			bezier(x, y, k + 1, 2, 50, width, r, g, b, rmap, gmap, bmap);
 			k = 0;
 			}
-		pts[0][i][j] = (pts[0][i][j]-glyfdata[1])*width/glyfdata[3];  
-		// apparently this duplicates points? That makes no sense; all this should do is stretch points
-		pts[1][i][j] = (pts[1][i][j]-glyfdata[2])*height/glyfdata[4];
 		j++;
 		k++;
 		}
@@ -159,6 +153,19 @@ i = 0;
 	fprintf(OUT, "%d %d %d ", rmap[i], gmap[i], bmap[i]);
 	i++;
 	}
+free(rmap);
+free(gmap);
+free(bmap);
+					//printf("%d %d; %d %d %d %d; %d %d\n", pts[0][i][j], pts[1][i][j], glyfdata[1], glyfdata[2], glyfdata[3], glyfdata[4], (pts[0][i][j]-glyfdata[1])*width/glyfdata[3], (pts[1][i][j]-glyfdata[2])*height/glyfdata[4]);
+		//printf("raster: %d %d %d\n", pts[0][i][j], pts[1][i][j], pts[2][i][j]);
+		///printf("raster: %d %d %d\n", pts[0][i][j], pts[1][i][j], pts[2][i][j]);
+				//while (l < k) {
+				//printf("x/y: %d %d %d\n", x[l], y[l], p[l]);
+				//l++;
+				//}
+			//printf("%d\n", k + 1);
+			//p = &pts[2][i][j-k];
+
 }
 
 int main (s_uint argc, char **argv) {
@@ -167,14 +174,7 @@ if (argc < 2) {
 return 1;
 }
 FILE *F = fopen(argv[1], "r");
-FILE *O = fopen(argv[2], "w");
-if (!(F&&O)) {
-	if (F) {
-	fclose(F);
-	}
-	if (O) {
-	fclose(O);
-	}
+if (!F) { 
 return 1;
 }
 
@@ -257,9 +257,6 @@ points[i] = getpts(ctr[i], glyphs[i][0], F); // this function worked, but I was 
 i++;
 }
 
-rasterize(200, 100, 255, 255, 255, points[10], ctr[10], glyphs[10], O); // where the suffering begins
-// glyph 10 is the glyph I arbitrarily chose to test this function 
-
 fseek(F, offset[where("cmap")], 0); // "cmap" contains character encoding table(s)
 				    // there are 3 in name.ttf and one is a basic ascii table
 				    // so once rasterize() works, getting bitmaps for each character
@@ -270,6 +267,8 @@ uint16_t PID[cmaptn];
 uint16_t EID[cmaptn];
 uint32_t s_table[cmaptn];
 uint16_t format;
+FILE *O;
+char fname[8];
 
 i = 0;
 while (i < cmaptn) {
@@ -291,13 +290,26 @@ format = (fgetc(F)<<8) + fgetc(F);
 	fgetc(F);fgetc(F); // language of table (so far useless)
 	j = 0;
 		while (j < 256) { // needs check for unused ascii or redifined characters
-		//fprintf(O, "%c%c", j, ':'); // arbitrary ':' for second character
 		t_len = fgetc(F);
-		//dumpinfo(points[t_len], ctr[t_len], glyphs[t_len][0], O);
-		//rasterize(h, w, r, g, b, points[t_len], ctr[t_len], glyphs[t_len], O);
+		fname[0] = t_len/100%10 + 48;
+		fname[1] = t_len/10%10 + 48;
+		fname[2] = t_len%10 + 48;
+		fname[3] = '.';
+		fname[4] = 'p';
+		fname[5] = 'b';
+		fname[6] = 'm';
+		fname[7] = 0;
+		O = fopen(fname, "w");
+			if (O) {
+			printf("%d %s\n", O, fname);
+			rasterize(100, 100, 255, 255, 255, points[j], ctr[j], glyphs[j], O);
+			fclose(O);
+			}
 		j++;
 		}
 	}
+	//fprintf(O, "%c%c", j, ':'); // arbitrary ':' for second character
+	//dumpinfo(points[t_len], ctr[t_len], glyphs[t_len][0], O);
 	if (format==2) {
 	fgetc(F);fgetc(F); // length of table (so far useless)
         fgetc(F);fgetc(F); // language of table (so far useless)
@@ -316,7 +328,6 @@ i++;
 
 
 fclose(F);
-fclose(O);
 }
 
 // ignore this; I got a little too frisky with my code one night and thought getpts() needed reworking

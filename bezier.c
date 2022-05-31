@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdio.h>
 #define u_char unsigned char
 
 int adjpow(uint32_t n) {
@@ -47,7 +48,7 @@ void bezier (   uint16_t *x,
 		u_char n,
 		uint32_t width,  
 		uint32_t tif, 
-		uint16_t max, 
+		uint32_t max, 
 		u_char r,
 		u_char g,
 		u_char b,
@@ -97,6 +98,7 @@ slice[0] = 1;
 		tb = 255 - b + b * t;
 		//drawcircle(xi, yi, max, width, (uint8_t)tr, (uint8_t)tg, (uint8_t)tb, rmap, gmap, bmap);
 		}
+	//printf("%u %u %u\n", xi, yi, yi*max+xi);
 	rmap[yi*max+xi] = r;
 	gmap[yi*max+xi] = g;
 	bmap[yi*max+xi] = b;
