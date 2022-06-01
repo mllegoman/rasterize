@@ -21,6 +21,7 @@ void drawcircle(uint32_t x,
 		uint8_t *rmap, 
 		uint8_t *gmap, 
 		uint8_t *bmap) {
+int32_t chk_b, chk_t;
 int32_t rt = 0;
 uint32_t ry;
 int32_t i = 0;
@@ -29,12 +30,16 @@ int32_t i = 0;
 		while (ry*ry < radius*radius-rt*rt) {
 		i = 0 - rt;
 			while (i < rt) {
-			rmap[(y-ry)*max+x+i] = r;
-			gmap[(y-ry)*max+x+i] = g;
-			bmap[(y-ry)*max+x+i] = b;
-			rmap[(y+ry)*max+x+i] = r;
-			gmap[(y+ry)*max+x+i] = g;
-			bmap[(y+ry)*max+x+i] = b;
+			chk_b = (y-ry)*max+x+i;
+			chk_t = (y+ry)*max+x+i;
+				if (chk_b > 0&&chk_t > 0) {
+				rmap[(y-ry)*max+x+i] = r;
+				gmap[(y-ry)*max+x+i] = g;
+				bmap[(y-ry)*max+x+i] = b;
+				rmap[(y+ry)*max+x+i] = r;
+				gmap[(y+ry)*max+x+i] = g;
+				bmap[(y+ry)*max+x+i] = b;
+				}
 			i++;
 			}
 		ry++;
@@ -49,6 +54,7 @@ void bezier (   uint16_t *x,
 		uint32_t width,  
 		uint32_t tif, 
 		uint32_t max, 
+		uint32_t height, 
 		u_char r,
 		u_char g,
 		u_char b,
@@ -98,10 +104,11 @@ slice[0] = 1;
 		tb = 255 - b + b * t;
 		//drawcircle(xi, yi, max, width, (uint8_t)tr, (uint8_t)tg, (uint8_t)tb, rmap, gmap, bmap);
 		}
-	//printf("%u %u %u\n", xi, yi, yi*max+xi);
-	rmap[yi*max+xi] = r;
-	gmap[yi*max+xi] = g;
-	bmap[yi*max+xi] = b;
+		if (yi*max+xi < height*max) {
+		rmap[yi*max+xi] = r;
+		gmap[yi*max+xi] = g;
+		bmap[yi*max+xi] = b;
+		}
 	}
 }
 

@@ -135,12 +135,11 @@ i = 0;
 	k = 0;
 		while (j < ctr[i]) {
 		pts[0][i][j] = (pts[0][i][j]-glyfdata[1])*width/glyfdata[3];  
-		pts[1][i][j] = (pts[1][i][j]-glyfdata[2])*height/glyfdata[4];
+		pts[1][i][j] = height-(pts[1][i][j]-glyfdata[2])*height/glyfdata[4];
 			if (pts[2][i][j]&&k!=0) { // adjust pts by k + 1
-			l = 0;
 			x = &pts[0][i][j-k];
                         y = &pts[1][i][j-k];
-			bezier(x, y, k + 1, 2, 50, width, r, g, b, rmap, gmap, bmap);
+			bezier(x, y, k + 1, 2, 50, width, height, r, g, b, rmap, gmap, bmap);
 			k = 0;
 			}
 		j++;
@@ -153,24 +152,27 @@ i = 0;
 	fprintf(OUT, "%d %d %d ", rmap[i], gmap[i], bmap[i]);
 	i++;
 	}
-free(rmap);
-free(gmap);
-free(bmap);
-					//printf("%d %d; %d %d %d %d; %d %d\n", pts[0][i][j], pts[1][i][j], glyfdata[1], glyfdata[2], glyfdata[3], glyfdata[4], (pts[0][i][j]-glyfdata[1])*width/glyfdata[3], (pts[1][i][j]-glyfdata[2])*height/glyfdata[4]);
-		//printf("raster: %d %d %d\n", pts[0][i][j], pts[1][i][j], pts[2][i][j]);
-		///printf("raster: %d %d %d\n", pts[0][i][j], pts[1][i][j], pts[2][i][j]);
+				//free(rmap);
+				//free(gmap);
+				//free(bmap);
+				//printf("%d %d; %d %d %d %d; %d %d\n", pts[0][i][j], pts[1][i][j], glyfdata[1], glyfdata[2], glyfdata[3], glyfdata[4], (pts[0][i][j]-glyfdata[1])*width/glyfdata[3], (pts[1][i][j]-glyfdata[2])*height/glyfdata[4]);
+				//printf("raster: %d %d %d\n", pts[0][i][j], pts[1][i][j], pts[2][i][j]);
+				///printf("raster: %d %d %d\n", pts[0][i][j], pts[1][i][j], pts[2][i][j]);
+				//l = 0
 				//while (l < k) {
+				//drawcircle(x[l], y[l], 2, width, 0, g-j, b-j, rmap, gmap, bmap);
 				//printf("x/y: %d %d %d\n", x[l], y[l], p[l]);
 				//l++;
 				//}
-			//printf("%d\n", k + 1);
-			//p = &pts[2][i][j-k];
+				//printf("%d\n", k + 1);
+				//p = &pts[2][i][j-k];
 
 }
 
 int main (s_uint argc, char **argv) {
 // most of the proceedings are just table lookups and whatnot
-if (argc < 2) {
+if (argc < 8) {
+printf("use  as: ./red TTF_file char width height red green blue\n");
 return 1;
 }
 FILE *F = fopen(argv[1], "r");
@@ -269,6 +271,15 @@ uint32_t s_table[cmaptn];
 uint16_t format;
 FILE *O;
 char fname[8];
+uint8_t s, r, g, b;
+uint16_t w, h;
+w = atoi(argv[3]);
+h = atoi(argv[4]);
+s = (uint8_t)atoi(argv[2]);
+r = (uint8_t)atoi(argv[5]);
+g = (uint8_t)atoi(argv[6]);
+b = (uint8_t)atoi(argv[7]);
+
 
 i = 0;
 while (i < cmaptn) {
@@ -291,19 +302,23 @@ format = (fgetc(F)<<8) + fgetc(F);
 	j = 0;
 		while (j < 256) { // needs check for unused ascii or redifined characters
 		t_len = fgetc(F);
-		fname[0] = t_len/100%10 + 48;
-		fname[1] = t_len/10%10 + 48;
-		fname[2] = t_len%10 + 48;
-		fname[3] = '.';
-		fname[4] = 'p';
-		fname[5] = 'b';
-		fname[6] = 'm';
-		fname[7] = 0;
-		O = fopen(fname, "w");
-			if (O) {
-			printf("%d %s\n", O, fname);
-			rasterize(100, 100, 255, 255, 255, points[j], ctr[j], glyphs[j], O);
-			fclose(O);
+			if (s==j) {
+			fname[0] = s/100%10 + 48;
+			fname[1] = s/10%10 + 48;
+			fname[2] = s%10 + 48;
+			fname[3] = '.';
+			fname[4] = 'p';
+			fname[5] = 'b';
+			fname[6] = 'm';
+			fname[7] = 0;
+			O = fopen(fname, "w");
+				if (O) {
+				printf("%d %s\n", O, fname);
+				rasterize(w, h, r, g, b, points[t_len], ctr[t_len], glyphs[t_len], O);
+				fclose(O);
+				} else {
+				printf("something went wrong\n");
+				}
 			}
 		j++;
 		}
